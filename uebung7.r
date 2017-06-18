@@ -30,17 +30,16 @@ epsilon
 # Entscheidungsformel der LDA im konkreten Beispiel als Funktion a+bx1^+cx2
 lambda <- solve(epsilon)%*%(mu1-mu2)
 lambda
-# -> D = -1*x1 + 0*x2
+# s. handschriftlich
 
 # C
 # Weitere Beobachtung p=(1,0) klassifizieren
 # Klassifikationsergebnis basierend auf Entscheidungsformel: 
 # D(1,0) = -1
-# -------------- Heisst das Metastasen oder keine Metastasen?? -------------------
+# -> mit Metastasen
 
 # D 
 # Weitere Informationen benoetigt fuer Durchfuehrung einer QDA: 
-# -------- normalverteilung ist doch in A schon ueberprueft -------------------
 # Es muesste ueberprueft werden, ob die Daten (annaehernd) normalverteilt sind,
 # denn das ist Voraussetzung fuer eine Diskriminanzanalyse
 # (Eine gleiche Varianz ist nur bei LDA noetig)
@@ -51,56 +50,71 @@ lambda
 # setwd(...)
 Patient1 <- read.csv2("Patient1.txt", header=FALSE)
 Patient1Label <- read.table("Patient1Label.txt", header=FALSE)
-#head(Patient1)
-#head(Patient1Label)
 # Datensatz umfasst Messungen von 118 Massekanaelen und 440 raeumlichen Positionen
 # Betrachtet werden Kaenaele 3 und 7
 # Label-Daten = Response-Variable (0 fuer Bindegewebe, 1 fuer Tumorgewebe)
 
 # A
 # Massekanaele 3 und 7 und Labels visualisieren
-#plot(Patient1[,c(3,7)],col=Patient1Label[,1]) 
-# dieser Plot mit allen Werten dauert ewig und ist komplett schwarz
-# deshalb eingrenzen der Werte
-xy <- head(Patient1[,c(3,7)], n=3)
-groups <- head(Patient1Label[,1], n=3)
-plot(xy, col=groups)
+x <- as.vector(Patient1[,3])
+is.vector(x)
+y <- as.vector(Patient1[,7])
+is.vector(y)
+label <- factor(Patient1Label[,1])
+plot(x,y,col=label)
 # Kommentar: Ist eine graphische Visualisieren leicht moeglich?
-# Anscheinend nicht, denn im Scatterplot sind zu viele Punkte, als dass man etwas erkennen koennte
+# Eine grafische Visualisierung ist moeglich, allerdings ueberschneiden sich die 
+# Punktewolken stark, dh es es kann nur eine sehr grobe Einschaetzung gewonnen werden
 
 # B
 # LDA Klassifikator (lda aus MASS Library)
 library(MASS)
-cl <- lda(Patient1Label[,1]~Patient1[,3]+Patient1[,7])
+cl <- lda(Patient1Label[,1]~x+y)
+cl
 plot(cl)
-# Kommentar: Die erklaerenden Variablen sind kolinear und es wird nur 0 predicted
 
 # C
 # Klassifikationsguete mit verschiedenen Massen
 # predict benutzen
-p <- predict(cl,newdata=Patient1[,c(3,7)])$class
+pl <- predict(cl,newdata=Patient1[,c(3,7)])$class
 
 # confusion matrix
 #t<- table(p,Patient1[,c(3,7)]) # ?
-t <- table(Patient1Label[,1], p)
-t
+tl <- table(Patient1Label[,1], p)
+tl
 
 # accuracy
-sum(diag(t))/sum(t)*100
+accl <-sum(diag(tl))/sum(tl)*100
+accl
 
 # missclassification error
-#mean(vorhergesagte_werte != wirkliche werte)
-t[1,2]+t[2,1]/(t[1,1]+t[1,2]+t[2,1]+t[2,2]) *100
+# mean(vorhergesagte_werte != wirkliche werte)
+misl <- t[1,2]+t[2,1]/(t[1,1]+t[1,2]+t[2,1]+t[2,2]) *100
+misl
 
 
 # D
 # QDA Klassifikator (qda aus MASS Library)
-# ...
-?qda
-qda(Patient1Label[,1]~Patient1[,3]+Patient1[,7])
+x <- as.numeric(levels(Patient1[,3]))[Patient1[,3]]
+y <- as.numeric(levels(Patient1[,7]))[Patient1[,7]]
+cq <- qda(Patient1Label[,1]~x+y)
+cq
 
 # E
 # Klassifikationsguete mit verschiedenen Massen
-# ....
+pq <- predict(cq,newdata=Patient1[,c(3,7)])$class
+plot(pq)
+# confusion matrix
+tq <- table(Patient1Label[,1], pq)
+tq
+# accuracy
+accq <- sum(diag(tq))/sum(tq)*100
+accq
+
+# missclassification error
+misq <- tq[1,2]+tq[2,1]/(tq[1,1]+tq[1,2]+tq[2,1]+tq[2,2]) *100
+misq
+
 # Vergleich zu Guete von lda
-#....
+# Bei diesem Datensatz ist die Praediktion von qda und lda gleich. 
+# Dementsprechend auch die Guete
